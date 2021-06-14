@@ -7,6 +7,8 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using Esprima;
 using Esprima.Ast;
+using Jint.Native;
+using Jint.Native.ArrayBuffer;
 using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
@@ -67,7 +69,9 @@ namespace Jint.Tests.Test262
                 "compareIterator.js",
                 "nativeFunctionMatcher.js",
                 "wellKnownIntrinsicObjects.js",
-                "fnGlobalObject.js"
+                "fnGlobalObject.js",
+                "detachArrayBuffer.js",
+                "byteConversionValues.js",
             };
 
             Sources = new Dictionary<string, Script>(files.Length);
@@ -111,12 +115,29 @@ namespace Jint.Tests.Test262
                         throw new Exception("only script parsing supported");
                     }
 
-                    var options = new ParserOptions {AdaptRegexp = true, Tolerant = false};
+                    var options = new ParserOptions { AdaptRegexp = true, Tolerant = false };
                     var parser = new JavaScriptParser(args.At(0).AsString(), options);
                     var script = parser.ParseScript(strict);
 
                     return engine.Evaluate(script);
                 }), true, true, true));
+
+            o.FastSetProperty("detachArrayBuffer", new PropertyDescriptor(new ClrFunctionInstance(engine, "detachArrayBuffer", (thisObj, args) =>
+             {
+                 var buffer = args.At(0);
+                 if (buffer is ArrayBufferInstance arrayBuffer)
+                 {
+                     if (arrayBuffer._isShared)
+                     {
+                         throw new Exception("Only ArrayBuffer can be detached.");
+                     }
+
+                     arrayBuffer._data = null;
+                     arrayBuffer._byteLength = 0;
+                 }
+
+                 return JsValue.Undefined;
+             }), true, true, true));
             engine.SetValue("$262", o);
 
             var includes = Regex.Match(code, @"includes: \[(.+?)\]");
@@ -316,7 +337,7 @@ namespace Jint.Tests.Test262
                     skip = true;
                     reason = "TypedArray not implemented";
                 }
-                
+
                 if (name.StartsWith("language/statements/class/subclass/builtin-objects/ArrayBuffer/"))
                 {
                     skip = true;

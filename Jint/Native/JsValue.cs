@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Jint.Native.Array;
+using Jint.Native.ArrayBuffer;
 using Jint.Native.Date;
 using Jint.Native.Iterator;
 using Jint.Native.Number;
@@ -143,6 +144,13 @@ namespace Jint.Native
         public bool IsSymbol()
         {
             return _type == InternalTypes.Symbol;
+        }
+
+        [Pure]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsArrayBuffer()
+        {
+            return this is ArrayBufferInstance;
         }
 
         [Pure]

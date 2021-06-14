@@ -38,7 +38,7 @@ namespace Jint.Runtime
         Undefined = 1,
         Null = 2,
 
-        // primitive  types range start
+        // primitive  types  start
         Boolean = 4,
         String = 8,
         Number = 16,
@@ -344,7 +344,6 @@ namespace Jint.Runtime
         public static double ToInteger(JsValue o)
         {
             var number = ToNumber(o);
-
             if (double.IsNaN(number))
             {
                 return 0;
@@ -445,6 +444,29 @@ namespace Jint.Runtime
             return o._type == InternalTypes.Integer
                 ? (ushort) (uint) o.AsInteger()
                 : (ushort) (uint) ToNumber(o);
+        }
+
+        public static ulong ToIndex(Engine engine, JsValue o)
+        {
+            var type = o._type & ~InternalTypes.InternalFlags;
+            if (type == InternalTypes.Undefined)
+            {
+                return 0;
+            }
+
+            var integerIndex = ToIntegerOrInfinity(o);
+            if (integerIndex < 0 || double.IsInfinity(integerIndex))
+            {
+                ExceptionHelper.ThrowRangeError(engine);
+            }
+
+            var index = ToLength(integerIndex);
+            if (index != integerIndex)
+            {
+                ExceptionHelper.ThrowRangeError(engine);
+            }
+
+            return index;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

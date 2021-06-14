@@ -31,10 +31,13 @@ namespace Jint.Native.Global
         {
             const PropertyFlag lengthFlags = PropertyFlag.Configurable;
             const PropertyFlag propertyFlags = PropertyFlag.Configurable | PropertyFlag.Writable;
-            var properties = new PropertyDictionary(42, checkExistingKeys: false)
+            var properties = new PropertyDictionary(43, checkExistingKeys: false)
             {
                 ["Object"] = new PropertyDescriptor(Engine.Object, propertyFlags),
                 ["Function"] = new PropertyDescriptor(Engine.Function, propertyFlags),
+                ["ArrayBuffer"] = new PropertyDescriptor(Engine.ArrayBuffer, propertyFlags),
+                ["SharedArrayBuffer"] = new PropertyDescriptor(Engine.SharedArrayBuffer, propertyFlags),
+                ["DataView"] = new PropertyDescriptor(Engine.DataView, propertyFlags),
                 ["Symbol"] = new PropertyDescriptor(Engine.Symbol, propertyFlags),
                 ["Array"] = new PropertyDescriptor(Engine.Array, propertyFlags),
                 ["Map"] = new PropertyDescriptor(Engine.Map, propertyFlags),

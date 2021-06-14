@@ -6,7 +6,9 @@ using Esprima.Ast;
 using Jint.Native;
 using Jint.Native.Argument;
 using Jint.Native.Array;
+using Jint.Native.ArrayBuffer;
 using Jint.Native.Boolean;
+using Jint.Native.DataView;
 using Jint.Native.Date;
 using Jint.Native.Error;
 using Jint.Native.Function;
@@ -160,6 +162,9 @@ namespace Jint
                 "'caller', 'callee', and 'arguments' properties may not be accessed on strict mode functions or the arguments objects for calls to them");
 
             Symbol = SymbolConstructor.CreateSymbolConstructor(this);
+            ArrayBuffer = ArrayBufferConstructor.CreateArrayBufferConstructor(this);
+            SharedArrayBuffer = ArrayBufferConstructor.CreateSharedArrayBufferConstructor(this);
+            DataView = DataViewConstructor.CreateDataViewConstructor(this);
             Array = ArrayConstructor.CreateArrayConstructor(this);
             Map = MapConstructor.CreateMapConstructor(this);
             Set = SetConstructor.CreateSetConstructor(this);
@@ -238,6 +243,9 @@ namespace Jint
         public ProxyConstructor Proxy { get; }
         public ReflectInstance Reflect { get; }
         public SymbolConstructor Symbol { get; }
+        public ArrayBufferConstructor ArrayBuffer { get; }
+        public ArrayBufferConstructor SharedArrayBuffer { get; }
+        public DataViewConstructor DataView { get; }
         public EvalFunctionInstance Eval { get; }
 
         public ErrorConstructor Error => _error ??= ErrorConstructor.CreateErrorConstructor(this, _errorFunctionName);
