@@ -169,7 +169,7 @@ public class ModuleLoaderTests
         Module IModuleLoader.LoadModule(Engine engine, ResolvedSpecifier resolved)
         {
             if (resolved.ModuleRequest.Specifier == MainSpecifier)
-                return ModuleFactory.BuildSourceTextModule(engine, Engine.PrepareModule(_main, MainSpecifier));
+                return ModuleFactory.BuildSourceTextModule(engine, null, Engine.PrepareModule(_main, MainSpecifier));
             return _modules.LoadModule(engine, resolved);
         }
     }
@@ -262,7 +262,7 @@ public class ModuleLoaderTests
                 if (_jsonModule is not null)
                     return ModuleFactory.BuildJsonModule(engine, _jsonModule.Value.Json, _jsonModule.Value.Location);
                 if (_textModule is not null)
-                    return ModuleFactory.BuildSourceTextModule(engine, _textModule.Value);
+                    return ModuleFactory.BuildSourceTextModule(engine, null, _textModule.Value);
                 throw new InvalidOperationException("Unexpected state - no module type available");
             }
         }

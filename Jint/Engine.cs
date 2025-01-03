@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Jint.Native;
 using Jint.Native.Function;
 using Jint.Native.Generator;
@@ -19,6 +19,7 @@ using Jint.Runtime.Interop.Reflection;
 using Jint.Runtime.Interpreter;
 using Jint.Runtime.Interpreter.Expressions;
 using Environment = Jint.Runtime.Environments.Environment;
+using ExecutionContext = Jint.Runtime.Environments.ExecutionContext;
 
 namespace Jint;
 
@@ -79,6 +80,7 @@ public sealed partial class Engine : IDisposable
 
     // we need to cache reflection accessors on engine level as configuration options can affect outcome
     internal readonly record struct ClrPropertyDescriptorFactoriesKey(Type Type, Key PropertyName);
+
     internal Dictionary<ClrPropertyDescriptorFactoriesKey, ReflectionAccessor> _reflectionAccessors = new();
 
     /// <summary>
@@ -259,7 +261,7 @@ public sealed partial class Engine : IDisposable
     /// </summary>
     public Engine SetValue(string name, double value)
     {
-        return SetValue(name, (JsValue) JsNumber.Create(value));
+        return SetValue(name, (JsValue)JsNumber.Create(value));
     }
 
     /// <summary>
@@ -267,7 +269,7 @@ public sealed partial class Engine : IDisposable
     /// </summary>
     public Engine SetValue(string name, int value)
     {
-        return SetValue(name, (JsValue) JsNumber.Create(value));
+        return SetValue(name, (JsValue)JsNumber.Create(value));
     }
 
     /// <summary>
@@ -275,7 +277,7 @@ public sealed partial class Engine : IDisposable
     /// </summary>
     public Engine SetValue(string name, bool value)
     {
-        return SetValue(name, (JsValue) (value ? JsBoolean.True : JsBoolean.False));
+        return SetValue(name, (JsValue)(value ? JsBoolean.True : JsBoolean.False));
     }
 
     /// <summary>
@@ -502,7 +504,7 @@ public sealed partial class Engine : IDisposable
 
     internal void AddToEventLoop(Action continuation)
     {
-        _eventLoop.Events.Enqueue(continuation);
+        _eventLoop.Enqueue(continuation);
     }
 
     internal void AddToKeptObjects(JsValue target)
@@ -512,17 +514,12 @@ public sealed partial class Engine : IDisposable
 
     internal void RunAvailableContinuations()
     {
-        var queue = _eventLoop.Events;
-        DoProcessEventLoop(queue);
+        _eventLoop.DoProcessEventLoop();
     }
 
-    private static void DoProcessEventLoop(ConcurrentQueue<Action> queue)
+    internal void RunAvailableContinuations(ManualResetEventSlim until)
     {
-        while (queue.TryDequeue(out var nextContinuation))
-        {
-            // note that continuation can enqueue new events
-            nextContinuation();
-        }
+        _eventLoop.DoProcessEventLoop(until);
     }
 
     internal void RunBeforeExecuteStatementChecks(StatementOrExpression? statement)
@@ -553,7 +550,7 @@ public sealed partial class Engine : IDisposable
 
         if (value is not Reference reference)
         {
-            return ((Completion) value).Value;
+            return ((Completion)value).Value;
         }
 
         return GetValue(reference, returnReferenceToPool);
@@ -603,7 +600,7 @@ public sealed partial class Engine : IDisposable
 
                 if (reference.IsPrivateReference)
                 {
-                    return baseObj.PrivateGet((PrivateName) reference.ReferencedName);
+                    return baseObj.PrivateGet((PrivateName)reference.ReferencedName);
                 }
 
                 reference.EvaluateAndCachePropertyKey();
@@ -628,13 +625,13 @@ public sealed partial class Engine : IDisposable
 
             if (reference.IsPrivateReference)
             {
-                return o.PrivateGet((PrivateName) reference.ReferencedName);
+                return o.PrivateGet((PrivateName)reference.ReferencedName);
             }
 
             return o.Get(property, reference.ThisValue);
         }
 
-        var record = (Environment) baseValue;
+        var record = (Environment)baseValue;
         var bindingValue = record.GetBindingValue(reference.ReferencedName.ToString(), reference.Strict);
 
         if (returnReferenceToPool)
@@ -649,7 +646,7 @@ public sealed partial class Engine : IDisposable
     {
         if (CommonProperties.Length.Equals(property))
         {
-            jsValue = JsNumber.Create((uint) s.Length);
+            jsValue = JsNumber.Create((uint)s.Length);
             return true;
         }
 
@@ -696,7 +693,7 @@ public sealed partial class Engine : IDisposable
             var baseObject = Runtime.TypeConverter.ToObject(Realm, reference.Base);
             if (reference.IsPrivateReference)
             {
-                baseObject.PrivateSet((PrivateName) property, value);
+                baseObject.PrivateSet((PrivateName)property, value);
                 return;
             }
 
@@ -709,7 +706,7 @@ public sealed partial class Engine : IDisposable
         }
         else
         {
-            ((Environment) reference.Base).SetMutableBinding(Runtime.TypeConverter.ToString(property), value, reference.Strict);
+            ((Environment)reference.Base).SetMutableBinding(Runtime.TypeConverter.ToString(property), value, reference.Strict);
         }
     }
 
@@ -824,6 +821,7 @@ public sealed partial class Engine : IDisposable
             {
                 _activeEvaluationContext = null!;
             }
+
             ResetConstraints();
             _agent.ClearKeptObjects();
         }
@@ -960,7 +958,7 @@ public sealed partial class Engine : IDisposable
             for (var i = functionDeclarations.Count - 1; i >= 0; i--)
             {
                 var d = functionDeclarations[i];
-                var fn = (Key) d.Id!.Name;
+                var fn = (Key)d.Id!.Name;
                 if (!declaredFunctionNames.Contains(fn))
                 {
                     var fnDefinable = env.CanDeclareGlobalFunction(fn);
@@ -1044,7 +1042,7 @@ public sealed partial class Engine : IDisposable
         var calleeContext = ExecutionContext;
         var func = function._functionDefinition;
 
-        var env = (FunctionEnvironment) ExecutionContext.LexicalEnvironment;
+        var env = (FunctionEnvironment)ExecutionContext.LexicalEnvironment;
         var strict = _isStrict || StrictModeScope.IsStrictModeCode;
 
         var configuration = func!.Initialize();
@@ -1205,7 +1203,7 @@ public sealed partial class Engine : IDisposable
     {
         var hoistingScope = HoistingScope.GetProgramLevelDeclarations(script);
 
-        var lexEnvRec = (DeclarativeEnvironment) lexEnv;
+        var lexEnvRec = (DeclarativeEnvironment)lexEnv;
         var varEnvRec = varEnv;
 
         var realm = Realm;
@@ -1218,7 +1216,7 @@ public sealed partial class Engine : IDisposable
                 for (var i = 0; i < nodes.Count; i++)
                 {
                     var variablesDeclaration = nodes[i];
-                    var identifier = (Identifier) variablesDeclaration.Declarations[0].Id;
+                    var identifier = (Identifier)variablesDeclaration.Declarations[0].Id;
                     if (globalEnvironmentRecord.HasLexicalDeclaration(identifier.Name))
                     {
                         ExceptionHelper.ThrowSyntaxError(realm, "Identifier '" + identifier.Name + "' has already been declared");
@@ -1236,7 +1234,7 @@ public sealed partial class Engine : IDisposable
                     for (var i = 0; i < nodes.Count; i++)
                     {
                         var variablesDeclaration = nodes[i];
-                        var identifier = (Identifier) variablesDeclaration.Declarations[0].Id;
+                        var identifier = (Identifier)variablesDeclaration.Declarations[0].Id;
                         if (thisEnvRec!.HasBinding(identifier.Name))
                         {
                             ExceptionHelper.ThrowSyntaxError(realm);
@@ -1441,7 +1439,7 @@ public sealed partial class Engine : IDisposable
                 ExceptionHelper.ThrowArgumentException(callable + " is not callable");
             }
 
-            return Call((ICallable) callable, thisObject, arguments, null);
+            return Call((ICallable)callable, thisObject, arguments, null);
         }
 
         return ExecuteWithConstraints(Options.Strict, Callback);
@@ -1502,7 +1500,7 @@ public sealed partial class Engine : IDisposable
             return Construct(functionInstance, arguments, newTarget, expression);
         }
 
-        return ((IConstructor) constructor).Construct(arguments, newTarget);
+        return ((IConstructor)constructor).Construct(arguments, newTarget);
     }
 
     internal JsValue Call(Function function, JsValue thisObject)
@@ -1560,7 +1558,7 @@ public sealed partial class Engine : IDisposable
         ObjectInstance result;
         try
         {
-            result = ((IConstructor) function).Construct(arguments, newTarget);
+            result = ((IConstructor)function).Construct(arguments, newTarget);
         }
         finally
         {
@@ -1594,7 +1592,7 @@ public sealed partial class Engine : IDisposable
         }
 
 #if SUPPORTS_WEAK_TABLE_CLEAR
-            _objectWrapperCache.Clear();
+        _objectWrapperCache.Clear();
 #else
         // we can expect that reflection is OK as we've been generating object wrappers already
         var clearMethod = _objectWrapperCache.GetType().GetMethod("Clear", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);

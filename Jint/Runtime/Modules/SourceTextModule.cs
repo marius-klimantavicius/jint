@@ -30,8 +30,8 @@ internal class SourceTextModule : CyclicModule
     private readonly List<ExportEntry> _indirectExportEntries;
     private readonly List<ExportEntry> _starExportEntries;
 
-    internal SourceTextModule(Engine engine, Realm realm, in Prepared<AstModule> source, string? location, bool async)
-        : base(engine, realm, location, async)
+    internal SourceTextModule(Engine engine, Realm realm, Engine.ModuleOperations? modules, in Prepared<AstModule> source, string? location, bool async)
+        : base(engine, realm, modules, location, async)
     {
         Debug.Assert(source.IsValid);
         _source = source.Program!;
@@ -93,7 +93,7 @@ internal class SourceTextModule : CyclicModule
         for (var i = 0; i < _starExportEntries.Count; i++)
         {
             var e = _starExportEntries[i];
-            var requestedModule = _engine._host.GetImportedModule(this, e.ModuleRequest!.Value);
+            var requestedModule = GetImportedModule(e.ModuleRequest!.Value);
             var starNames = requestedModule.GetExportedNames(exportStarSet);
 
             for (var j = 0; j < starNames.Count; j++)
@@ -142,7 +142,7 @@ internal class SourceTextModule : CyclicModule
             var e = _indirectExportEntries[i];
             if (string.Equals(exportName, e.ExportName, StringComparison.Ordinal))
             {
-                var importedModule = _engine._host.GetImportedModule(this, e.ModuleRequest!.Value);
+                var importedModule = GetImportedModule(e.ModuleRequest!.Value);
                 if (string.Equals(e.ImportName, "*", StringComparison.Ordinal))
                 {
                     // 1. Assert: module does not provide the direct binding for this export.
@@ -167,7 +167,7 @@ internal class SourceTextModule : CyclicModule
         for (var i = 0; i < _starExportEntries.Count; i++)
         {
             var e = _starExportEntries[i];
-            var importedModule = _engine._host.GetImportedModule(this, e.ModuleRequest!.Value);
+            var importedModule = GetImportedModule(e.ModuleRequest!.Value);
             var resolution = importedModule.ResolveExport(exportName, resolveSet);
             if (resolution == ResolvedBinding.Ambiguous)
             {
@@ -217,7 +217,7 @@ internal class SourceTextModule : CyclicModule
             for (var i = 0; i < _importEntries.Count; i++)
             {
                 var ie = _importEntries[i];
-                var importedModule = _engine._host.GetImportedModule(this, ie.ModuleRequest);
+                var importedModule = GetImportedModule(ie.ModuleRequest);
                 if (string.Equals(ie.ImportName, "*", StringComparison.Ordinal))
                 {
                     var ns = GetModuleNamespace(importedModule);

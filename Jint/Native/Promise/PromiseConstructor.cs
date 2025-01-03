@@ -148,7 +148,7 @@ internal sealed class PromiseConstructor : Constructor
     /// <summary>
     /// https://tc39.es/ecma262/#sec-promise.reject
     /// </summary>
-    private JsValue Reject(JsValue thisObject, JsValue[] arguments)
+    internal JsValue Reject(JsValue thisObject, JsValue[] arguments)
     {
         if (!thisObject.IsObject())
         {

@@ -129,6 +129,7 @@ internal sealed class JsPromise : ObjectInstance
         PromiseRejectReactions = new List<PromiseReaction>();
         PromiseFulfillReactions.Clear();
         CompletedEvent.Set();
+        EventLoop.NotifyLoop();
 
         // Note that this part is skipped because there is no tracking yet
         // 7. If promise.[[PromiseIsHandled]] is false, perform HostPromiseRejectionTracker(promise, "reject").
@@ -149,6 +150,7 @@ internal sealed class JsPromise : ObjectInstance
         PromiseFulfillReactions = new List<PromiseReaction>();
         PromiseRejectReactions.Clear();
         CompletedEvent.Set();
+        EventLoop.NotifyLoop();
 
         return PromiseOperations.TriggerPromiseReactions(_engine, reactions, result);
     }

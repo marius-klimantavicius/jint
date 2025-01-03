@@ -9,8 +9,8 @@ internal sealed class BuilderModule : SourceTextModule
 {
     private List<KeyValuePair<string, JsValue>> _exportBuilderDeclarations = new();
 
-    internal BuilderModule(Engine engine, Realm realm, in Prepared<AstModule> source, string? location, bool async)
-        : base(engine, realm, source, location, async)
+    internal BuilderModule(Engine engine, Realm realm, Engine.ModuleOperations modules, in Prepared<AstModule> source, string? location, bool async)
+        : base(engine, realm, modules, source, location, async)
     {
     }
 

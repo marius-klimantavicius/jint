@@ -32,6 +32,10 @@ using Jint.Native.WeakMap;
 using Jint.Native.WeakRef;
 using Jint.Native.WeakSet;
 
+#if !NETFRAMEWORK
+using Jint.Native.XmlHttpRequest;
+#endif
+
 namespace Jint.Runtime;
 
 public sealed partial class Intrinsics
@@ -91,6 +95,10 @@ public sealed partial class Intrinsics
     private AsyncFunctionConstructor? _asyncFunction;
     private FinalizationRegistryConstructor? _finalizationRegistry;
 
+#if !NETFRAMEWORK
+    private XmlHttpRequestConstructor? _xmlHttpRequestConstructor;
+#endif
+
     private IntrinsicTypedArrayConstructor? _typedArray;
     private Int8ArrayConstructor? _int8Array;
     private Uint8ArrayConstructor? _uint8Array;
@@ -125,6 +133,11 @@ public sealed partial class Intrinsics
 
     public ObjectConstructor Object { get; }
     public FunctionConstructor Function { get; }
+
+#if !NETFRAMEWORK
+    internal XmlHttpRequestConstructor XmlHttpRequest =>
+        _xmlHttpRequestConstructor ??= new XmlHttpRequestConstructor(_engine, _realm, Function.PrototypeObject, Object.PrototypeObject);
+#endif
 
     internal FinalizationRegistryConstructor FinalizationRegistry =>
         _finalizationRegistry ??= new FinalizationRegistryConstructor(_engine, _realm, Function, Object.PrototypeObject);

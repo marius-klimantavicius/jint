@@ -42,8 +42,8 @@ public class ParserOptionsPropagationTests
             if (resolved.ModuleRequest.Specifier == MainSpecifier)
             {
                 return _prepare
-                    ? ModuleFactory.BuildSourceTextModule(engine, Engine.PrepareModule(_code, MainSpecifier, options: new ModulePreparationOptions { ParsingOptions = _parsingOptions }))
-                    : ModuleFactory.BuildSourceTextModule(engine, resolved, _code, _parsingOptions);
+                    ? ModuleFactory.BuildSourceTextModule(engine, null, Engine.PrepareModule(_code, MainSpecifier, options: new ModulePreparationOptions { ParsingOptions = _parsingOptions }))
+                    : ModuleFactory.BuildSourceTextModule(engine, null, resolved, _code, _parsingOptions);
             }
 
             throw new ArgumentException(null, nameof(resolved));

@@ -23,7 +23,7 @@ public abstract class ModuleLoader : IModuleLoader
         var isJson = resolved.ModuleRequest.IsJsonModule();
         Module moduleRecord = isJson
             ? ModuleFactory.BuildJsonModule(engine, resolved, code)
-            : ModuleFactory.BuildSourceTextModule(engine, resolved, code);
+            : ModuleFactory.BuildSourceTextModule(engine, null, resolved, code);
 
         return moduleRecord;
     }

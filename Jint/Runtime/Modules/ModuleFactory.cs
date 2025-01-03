@@ -19,14 +19,14 @@ public static class ModuleFactory
     /// </remarks>
     /// <exception cref="ParseErrorException">Is thrown if the provided <paramref name="code"/> can not be parsed.</exception>
     /// <exception cref="JavaScriptException">Is thrown if an error occured when parsing <paramref name="code"/>.</exception>
-    public static Module BuildSourceTextModule(Engine engine, ResolvedSpecifier resolved, string code, ModuleParsingOptions? parsingOptions = null)
+    public static Module BuildSourceTextModule(Engine engine, Engine.ModuleOperations? modules, ResolvedSpecifier resolved, string code, ModuleParsingOptions? parsingOptions = null)
     {
         var source = resolved.Uri?.LocalPath ?? resolved.Key;
         var parserOptions = (parsingOptions ?? ModuleParsingOptions.Default).GetParserOptions();
         var parser = new Parser(parserOptions);
         var module = parser.ParseModuleGuarded(engine, code, source);
 
-        return BuildSourceTextModule(engine, new Prepared<AstModule>(module, parserOptions));
+        return BuildSourceTextModule(engine, modules, new Prepared<AstModule>(module, parserOptions));
     }
 
     /// <summary>
@@ -37,14 +37,14 @@ public static class ModuleFactory
     /// The returned modules location (see <see cref="Module.Location"/>) will be set
     /// to <see cref="SourceLocation.SourceFile"/> of the <paramref name="preparedModule"/>.
     /// </remarks>
-    public static Module BuildSourceTextModule(Engine engine, in Prepared<AstModule> preparedModule)
+    public static Module BuildSourceTextModule(Engine engine, Engine.ModuleOperations? modules, in Prepared<AstModule> preparedModule)
     {
         if (!preparedModule.IsValid)
         {
             ExceptionHelper.ThrowInvalidPreparedModuleArgumentException(nameof(preparedModule));
         }
 
-        return new SourceTextModule(engine, engine.Realm, preparedModule, preparedModule.Program!.Location.SourceFile, async: false);
+        return new SourceTextModule(engine, engine.Realm, modules, preparedModule, preparedModule.Program!.Location.SourceFile, async: false);
     }
 
     /// <summary>

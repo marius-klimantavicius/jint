@@ -651,8 +651,7 @@ public static class JsValueExtensions
         {
             var engine = promise.Engine;
             var completedEvent = promise.CompletedEvent;
-            engine.RunAvailableContinuations();
-            completedEvent.Wait();
+            engine.RunAvailableContinuations(completedEvent);
             switch (promise.State)
             {
                 case PromiseState.Pending:

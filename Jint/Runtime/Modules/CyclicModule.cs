@@ -34,8 +34,11 @@ public abstract class CyclicModule : Module
     internal JsValue _evalResult;
     private SourceLocation _abnormalCompletionLocation;
 
-    internal CyclicModule(Engine engine, Realm realm, string location, bool async) : base(engine, realm, location)
+    protected Engine.ModuleOperations Modules { get; }
+
+    internal CyclicModule(Engine engine, Realm realm, Engine.ModuleOperations modules, string location, bool async) : base(engine, realm, location)
     {
+        Modules = modules;
     }
 
     internal ModuleStatus Status { get; private set; }
@@ -193,7 +196,7 @@ public abstract class CyclicModule : Module
 
         foreach (var request in _requestedModules)
         {
-            var requiredModule = _engine._host.GetImportedModule(this, request);
+            var requiredModule = GetImportedModule(request);
 
             index = requiredModule.InnerModuleLinking(stack, index);
 
@@ -250,6 +253,14 @@ public abstract class CyclicModule : Module
         return index;
     }
 
+    protected Module GetImportedModule(ModuleRequest request)
+    {
+        if (Modules != null)
+            return Modules.Load(Location, request);
+
+        return _engine._host.GetImportedModule(this, request);
+    }
+
     /// <summary>
     /// https://tc39.es/ecma262/#sec-innermoduleevaluation
     /// </summary>
@@ -284,7 +295,7 @@ public abstract class CyclicModule : Module
 
         foreach (var required in _requestedModules)
         {
-            var requiredModule = _engine._host.GetImportedModule(this, required);
+            var requiredModule = GetImportedModule(required);
 
             var result = requiredModule.InnerModuleEvaluation(stack, index, ref asyncEvalOrder);
             if (result.Type != CompletionType.Normal)
@@ -422,7 +433,7 @@ public abstract class CyclicModule : Module
         var onFullfilled = new ClrFunction(_engine, "fulfilled", AsyncModuleExecutionFulfilled, 1, PropertyFlag.Configurable);
         var onRejected = new ClrFunction(_engine, "rejected", AsyncModuleExecutionRejected, 1, PropertyFlag.Configurable);
 
-        PromiseOperations.PerformPromiseThen(_engine, (JsPromise) capability.PromiseInstance, onFullfilled, onRejected, null);
+        PromiseOperations.PerformPromiseThen(_engine, (JsPromise)capability.PromiseInstance, onFullfilled, onRejected, null);
 
         return ExecuteModule(capability);
     }
@@ -433,7 +444,7 @@ public abstract class CyclicModule : Module
     /// </summary>
     private static JsValue AsyncModuleExecutionFulfilled(JsValue thisObject, JsValue[] arguments)
     {
-        var module = (CyclicModule) arguments.At(0);
+        var module = (CyclicModule)arguments.At(0);
         if (module.Status == ModuleStatus.Evaluated)
         {
             if (module._evalError is not null)
@@ -507,7 +518,7 @@ public abstract class CyclicModule : Module
     /// </summary>
     private static JsValue AsyncModuleExecutionRejected(JsValue thisObject, JsValue[] arguments)
     {
-        var module = (SourceTextModule) arguments.At(0);
+        var module = (SourceTextModule)arguments.At(0);
         var error = arguments.At(1);
 
         if (module.Status == ModuleStatus.Evaluated)

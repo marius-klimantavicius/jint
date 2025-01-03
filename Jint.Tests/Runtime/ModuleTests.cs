@@ -508,7 +508,7 @@ export const count = globals.counter;
             Assert.NotNull(resolved.Uri);
             var source = resolved.Uri.ToString();
             Assert.True(_modules.TryGetValue(source, out var script), $"Resolved module does not exist: {source}");
-            return ModuleFactory.BuildSourceTextModule(engine, Engine.PrepareModule(script, source));
+            return ModuleFactory.BuildSourceTextModule(engine, null, Engine.PrepareModule(script, source));
         }
     }
 
@@ -704,7 +704,7 @@ export const count = globals.counter;
         loaderModules.Add(JsonModuleSpecifier, (engine, resolved) => ModuleFactory.BuildJsonModule(engine, resolved, JsonModuleContent));
         if (importViaLoader)
         {
-            loaderModules.Add(MainModuleSpecifier, (engine, resolved) => ModuleFactory.BuildSourceTextModule(engine, resolved, MainModuleCode));
+            loaderModules.Add(MainModuleSpecifier, (engine, resolved) => ModuleFactory.BuildSourceTextModule(engine, null, resolved, MainModuleCode));
         }
         else
         {
@@ -743,7 +743,7 @@ export const count = globals.counter;
         loaderModules.Add(JsonModuleSpecifier, (engine, resolved) => ModuleFactory.BuildJsonModule(engine, resolved, JsonModuleContent));
         if (importViaLoader)
         {
-            loaderModules.Add(MainModuleSpecifier, (engine, resolved) => ModuleFactory.BuildSourceTextModule(engine, resolved, MainModuleCode));
+            loaderModules.Add(MainModuleSpecifier, (engine, resolved) => ModuleFactory.BuildSourceTextModule(engine, null, resolved, MainModuleCode));
         }
         else
         {

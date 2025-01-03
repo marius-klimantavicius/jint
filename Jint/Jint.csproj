@@ -47,4 +47,9 @@
     <Using Remove="System.Threading" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net462' ">
+    <None Remove="Native\Polyfill\**\*.js"/>
+    <EmbeddedResource Include="Native\Polyfill\**\*.js"/>
+  </ItemGroup>
+
 </Project>
